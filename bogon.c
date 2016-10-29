@@ -34,24 +34,31 @@ void print_domain() {
     }
 }
 
+int check_existing(char *name){
+    struct dgalist *s;
+
+    HASH_FIND_STR(dlist, name, s);
+    if(s == NULL){
+      printf("seems like new domain\n");
+      return 1;
+    }
+    else{
+      return 0;
+    }
+}
+
 // caching 
 void add_domain(char *name, int v) {
     struct dgalist *s;
 
-    // look for existing before adding
-    HASH_FIND_STR(dlist, name, s);
+    s = malloc(sizeof(struct dgalist));
     if (s == NULL){
-      s = malloc(sizeof(struct dgalist));
-      if (s == NULL){
-        perror("allocating memory failed, cannot add domain");
-        exit(-1);
-      }
-      s->verdict = v;
-      strcpy(s->dname, name);
-      HASH_ADD_STR(dlist, dname, s);  /* id: name of key field */
-    }else{
-      printf("domain:%s all ready exist with verdict:%d\n", dlist->dname, dlist->verdict);
+      perror("allocating memory failed, cannot add domain");
+      exit(-1);
     }
+    s->verdict = v;
+    strcpy(s->dname, name);
+    HASH_ADD_STR(dlist, dname, s);  /* id: name of key field */
 }
 
 int D(char *str1){
@@ -71,10 +78,12 @@ int D(char *str1){
   l = levenshtein(str1, buf);
 
   /*
+
     the number 3 is just a number i choosed without any true modeling. 
 
     1. best is to have bigger list that represent more real data
-    2. do statistics and verify how numbers are fits into the edit distance algorithm
+    2. use statistics and verify how numbers fit into the edit distance algorithm
+
   */
 
   if(l <= 3){
@@ -97,16 +106,29 @@ int D(char *str1){
 }
 
 int main(int argc, char *argv[]){
-  int16_t match;
+
+  struct dgalist *s;
+
+  int16_t match, i;
 
   if(argc != 2){
     printf("%s str1\n", argv[0]);
     exit(0);
   }
 
-  match = D(argv[1]);
+
+  i = check_existing(argv[1]);
+  if(i == 1){
+    match = D(argv[1]);
+  }
+  else{
+     HASH_FIND_STR(dlist, argv[1], s);
+     printf("name:%s verdict:%d\n", argv[1], s->verdict);
+  }
 
   print_domain();
+
+  // free all allocations //
   clean_all();
   return 0;
 }
