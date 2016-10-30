@@ -7,3 +7,4 @@ I started with the [Domain-Analyzer](https://github.com/udishamir/Domain-Analyze
 ## DGA 
 We know them when we see them but in order to detect them programmaticaly im using edit distance algorithm to try and detecting names that make "no sense".
 
+dont ask me why i've called it bogon :)

@@ -26,6 +26,10 @@ void clean_all() {
   }
 }
 
+/*
+  this function should be called only when you need to verfy your db nut not on regular bassis
+*/
+
 void print_domain() {
     struct dgalist *s;
 
@@ -34,17 +38,11 @@ void print_domain() {
     }
 }
 
-int check_existing(char *name){
+struct dgalist *check_existing(char *name) {
     struct dgalist *s;
 
-    HASH_FIND_STR(dlist, name, s);
-    if(s == NULL){
-      printf("seems like new domain\n");
-      return 1;
-    }
-    else{
-      return 0;
-    }
+    HASH_FIND_STR(dlist, name, s );  /* s: output pointer */
+    return s;
 }
 
 // caching 
@@ -109,21 +107,20 @@ int main(int argc, char *argv[]){
 
   struct dgalist *s;
 
-  int16_t match, i;
+  int16_t match;
 
   if(argc != 2){
     printf("%s str1\n", argv[0]);
     exit(0);
   }
 
-
-  i = check_existing(argv[1]);
-  if(i == 1){
+  // check if we have cached the name before //
+  s = check_existing(argv[1]);
+  if(s == NULL){
     match = D(argv[1]);
   }
   else{
-     HASH_FIND_STR(dlist, argv[1], s);
-     printf("name:%s verdict:%d\n", argv[1], s->verdict);
+     printf("name:%s verdict:%d\n", s->dname, s->verdict);
   }
 
   print_domain();
