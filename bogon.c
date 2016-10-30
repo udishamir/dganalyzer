@@ -27,7 +27,7 @@ void clean_all() {
 }
 
 /*
-  this function should be called only when you need to verfy your db nut not on regular bassis
+  this function should be called only when you need to verfy your db, not on regular bassis
 */
 
 void print_domain() {
@@ -68,6 +68,7 @@ int D(char *str1){
     return -1;
  }
 
+ //  this needs to be changed to dynamic allocation
  char buf[2493109];
 
  while(fgets(buf, 2493108 , fp)){
