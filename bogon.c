@@ -80,7 +80,7 @@ void add_domain(char *name, int v) {
     s = malloc(sizeof(struct dgalist));
     if (s == NULL){
       perror("allocating memory failed, cannot add domain");
-      exit(-1);
+      return -1;
     }
     s->verdict = v;
     strcpy(s->dname, name);
@@ -147,6 +147,8 @@ int main(int argc, char *argv[]){
   s = check_existing(argv[1]);
   if(s == NULL){
     match = D(argv[1]);
+    if (match == -1){
+      
   }
   else{
      printf("name:%s verdict:%d\n", s->dname, s->verdict);
