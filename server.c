@@ -46,7 +46,6 @@ int clean_all(char *mem_map, struct map *p){
   // unmapping the file
    if(munmap(mem_map, sizeof(mem_map)) == -1){
      perror("failed to unmap");
-     return -1;
    }
 
    // free the allocated struct
@@ -57,7 +56,6 @@ int clean_all(char *mem_map, struct map *p){
 
 struct map *loader(){
    int fd;
-   uint32_t size;
   
    struct map *mp;
    struct stat st;
@@ -65,18 +63,23 @@ struct map *loader(){
    mp = malloc(sizeof(mp));
    if (mp == NULL){
      perror("failed to allocate memory");
+
+     return NULL;
    }
 
    if(stat(WORDS, &st) != 0){
      perror("stat failed");
-     exit(-1);
+     free(mp);
+    
+     return NULL;
    }
 
    fd = open(WORDS, O_RDONLY);
    if(fd == -1){
      free(mp);
-     perror("failed to open words");
-     exit(-1);
+     perror("failed to open db file");
+     
+     return NULL;
    }
 
    mp->size = st.st_size;
@@ -85,7 +88,9 @@ struct map *loader(){
    if(mp->mapping== MAP_FAILED){
      perror("failed to map words file");
      close(fd);
-     exit(-1);
+     free(mp);
+
+     return NULL;
    }
 
    // memory mapped, we can close the handle
@@ -102,12 +107,22 @@ int main(){
 
   // load once
   p = loader();
+  if(p == NULL){
+    printf("loader failed, cannot proceed\n");
+    exit(-1);
+  }
+
   printf("%s\n", p->mapping);
+
+  /*
+    serveer goes here 
+    
+  */
 
   // cleanup
   i = clean_all(mem_map, p);
   if(i == -1){
-    printf("failed to munmap\n");
+    printf("cleanup return with error\n");
   }
 
 }
