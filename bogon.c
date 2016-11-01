@@ -74,7 +74,7 @@ struct dgalist *check_existing(char *name) {
 }
 
 // caching 
-void add_domain(char *name, int v) {
+int add_domain(char *name, int v) {
     struct dgalist *s;
 
     s = malloc(sizeof(struct dgalist));
@@ -85,6 +85,8 @@ void add_domain(char *name, int v) {
     s->verdict = v;
     strcpy(s->dname, name);
     HASH_ADD_STR(dlist, dname, s);  /* id: name of key field */
+
+    return 0;
 }
 
 int D(char *str1){
@@ -147,8 +149,6 @@ int main(int argc, char *argv[]){
   s = check_existing(argv[1]);
   if(s == NULL){
     match = D(argv[1]);
-    if (match == -1){
-      
   }
   else{
      printf("name:%s verdict:%d\n", s->dname, s->verdict);
