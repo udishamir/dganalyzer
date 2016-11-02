@@ -26,14 +26,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "global.h"
 
@@ -56,7 +59,7 @@ int clean_all(char *mem_map, struct map *p){
 
 struct map *loader(){
    int fd;
-  
+ 
    struct map *mp;
    struct stat st;
 
@@ -84,6 +87,17 @@ struct map *loader(){
 
    mp->size = st.st_size;
 
+   // allocating memory for the mapping 
+   mp->mapping = malloc(sizeof(char *) * mp->size + 1);
+   if(mp->mapping == NULL){
+    perror("malloc failed for mapping section");
+    close(fd);
+    free(mp);
+
+    return NULL;
+   }
+
+   // mapping the file to memory
    mp->mapping = mmap(0, mp->size, PROT_READ, MAP_PRIVATE, fd, 0);
    if(mp->mapping== MAP_FAILED){
      perror("failed to map words file");
@@ -104,6 +118,10 @@ int main(){
   struct map *p;
   int i = 0;
 
+  int s, b, l,  s2, t, len;
+  struct sockaddr_un local, remote;
+  char msg[MAX_MSG]; 
+
   // load once
   p = loader();
   if(p == NULL){
@@ -111,21 +129,63 @@ int main(){
     exit(-1);
   }
 
-  printf("%s\n", p->mapping);
 
   /*
+    https://beej.us/guide/bgipc/output/html/multipage/unixsock.html
 
+    
     server goes here 
     
   */
 
+  s = socket(AF_UNIX, SOCK_STREAM, 0);
+  if(s == EXIT_ERR){
+     i = clean_all(p->mapping, p);
+     if(i == EXIT_ERR){
+        printf("cleanup return with error\n");
+        exit(EXIT_ERR);
+     }
+     exit(EXIT_ERR);
+   }
+
+
+  local.sun_family = AF_UNIX;
+  strcpy(local.sun_path, SOCK_PATH);
+
+  unlink(local.sun_path);
+
+  len = strlen(local.sun_path) + sizeof(local.sun_family);
+
+  // bind 
+  b = bind(s, (struct sockaddr *)&local, len);
+  if(b == EXIT_ERR){
+    printf("bind failed, exiting\n");
+    i = clean_all(p->mapping, p);
+    if(i == EXIT_ERR){
+       printf("cleanup return with error\n");
+       exit(EXIT_ERR);
+    }
+    exit(EXIT_ERR);
+  }
+
+ // we hold queue of max 5 connections
+  l = listen(s, MAX_QUEUE);
+  if(l == EXIT_ERR){
+     printf("bind failed, exiting\n");
+     i = clean_all(p->mapping, p);
+     if(i == EXIT_ERR){
+        printf("cleanup return with error\n");
+        exit(EXIT_ERR);
+     }
+     exit(EXIT_ERR);
+  }
+
   // cleanup
   i = clean_all(p->mapping, p);
   if(i == EXIT_ERR){
-    printf("cleanup return with error\n");
+     printf("cleanup return with error\n");
   }
-
-
+  
   p = NULL;
 
   return 0;
