@@ -60,7 +60,7 @@ struct map *loader(){
    struct map *mp;
    struct stat st;
 
-   mp = malloc(sizeof(mp));
+   mp = malloc(sizeof(struct map));
    if (mp == NULL){
      perror("failed to allocate memory");
 
@@ -75,7 +75,7 @@ struct map *loader(){
    }
 
    fd = open(WORDS, O_RDONLY);
-   if(fd == -1){
+   if(fd == EXIT_ERR){
      free(mp);
      perror("failed to open db file");
      
@@ -102,7 +102,6 @@ struct map *loader(){
 
 int main(){
   struct map *p;
-  void *mem_map;
   int i = 0;
 
   // load once
@@ -115,14 +114,19 @@ int main(){
   printf("%s\n", p->mapping);
 
   /*
-    serveer goes here 
+
+    server goes here 
     
   */
 
   // cleanup
-  i = clean_all(mem_map, p);
-  if(i == -1){
+  i = clean_all(p->mapping, p);
+  if(i == EXIT_ERR){
     printf("cleanup return with error\n");
   }
 
+
+  p = NULL;
+
+  return 0;
 }
