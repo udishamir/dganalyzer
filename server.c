@@ -118,7 +118,8 @@ int main(){
   struct map *p;
   int i = 0;
 
-  int s, b, l,  s2, t, len;
+  uint32_t t;
+  int s, b, l,  s2, len;
   struct sockaddr_un local, remote;
   char msg[MAX_MSG]; 
 
@@ -180,6 +181,43 @@ int main(){
      exit(EXIT_ERR);
   }
 
+  // listen and block for connection
+  for(;;){
+      int done, n;
+      printf("waiting for connection\n");
+      t = sizeof(remote); 
+      s2 = accept(s, (struct sockaddr *)&remote, &t);
+      if(s2 == EXIT_ERR){
+         printf("accept failed, existing\n");
+         //cleanup
+         i = clean_all(p->mapping, p);
+         if(i == EXIT_ERR){
+            printf("cleanup return with error\n");
+            exit(EXIT_ERR);
+         }
+         exit(EXIT_ERR);
+      }
+      
+      printf("received scannig request\n");
+
+      done = 0;
+      do{
+         n = recv(s2, msg, MAX_MSG, 0);
+         // we got a connection without any data 
+         if(n <= 0){
+            // recv failed  
+            if(n < 0){
+               perror("recv");
+               // exit the loop
+               done = 1;
+               close(s2);
+             }
+          }
+      } while (!done);
+    
+      close(s2);
+  }
+     
   // cleanup
   i = clean_all(p->mapping, p);
   if(i == EXIT_ERR){
