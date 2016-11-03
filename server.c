@@ -139,6 +139,7 @@ int main(){
     
   */
 
+  // create domain, stream socket
   s = socket(AF_UNIX, SOCK_STREAM, 0);
   if(s == EXIT_ERR){
      i = clean_all(p->mapping, p);
@@ -151,6 +152,10 @@ int main(){
 
 
   local.sun_family = AF_UNIX;
+  /*
+      create the sock file (check global.h for the file name, or to change it).
+      we will communicate bi-directional using this file.
+  */
   strcpy(local.sun_path, SOCK_PATH);
 
   unlink(local.sun_path);
@@ -169,7 +174,7 @@ int main(){
     exit(EXIT_ERR);
   }
 
- // we hold queue of max 5 connections
+ // we hold queue of max 5 connections, check global.h to change the queue size
   l = listen(s, MAX_QUEUE);
   if(l == EXIT_ERR){
      printf("bind failed, exiting\n");
