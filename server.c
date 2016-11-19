@@ -44,7 +44,7 @@ struct map{
   uint32_t size;
   void *mapping;
 };
-  
+
 int clean_all(char *mem_map, struct map *p){
   // unmapping the file
    if(munmap(mem_map, sizeof(mem_map)) == -1){
@@ -52,7 +52,7 @@ int clean_all(char *mem_map, struct map *p){
    }
 
    // free the allocated struct
-   free(p);
+   //free(p);
 
    return 0;
 }
@@ -87,16 +87,6 @@ struct map *loader(){
 
    mp->size = st.st_size;
 
-   // allocating memory for the mapping 
-   mp->mapping = malloc(sizeof(char *) * mp->size + 1);
-   if(mp->mapping == NULL){
-    perror("malloc failed for mapping section");
-    close(fd);
-    free(mp);
-
-    return NULL;
-   }
-
    // mapping the file to memory
    mp->mapping = mmap(0, mp->size, PROT_READ, MAP_PRIVATE, fd, 0);
    if(mp->mapping== MAP_FAILED){
@@ -119,17 +109,15 @@ int main(){
   int i = 0;
 
   uint32_t t;
-  int s, b, l,  s2, len;
+  int s, b, l, s2, s3, len, cmp;
   struct sockaddr_un local, remote;
   char msg[MAX_MSG]; 
 
   // load once
   p = loader();
   if(p == NULL){
-    printf("loader failed, cannot proceed\n");
-    exit(-1);
+    perror("loader failed, cannot proceed\n");
   }
-
 
   /*
     https://beej.us/guide/bgipc/output/html/multipage/unixsock.html
@@ -168,8 +156,7 @@ int main(){
     printf("bind failed, exiting\n");
     i = clean_all(p->mapping, p);
     if(i == EXIT_ERR){
-       printf("cleanup return with error\n");
-       exit(EXIT_ERR);
+       perror("cleanup return with error\n");
     }
     exit(EXIT_ERR);
   }
@@ -188,39 +175,40 @@ int main(){
 
   // listen and block for connection
   for(;;){
-      int done, n;
-      printf("waiting for connection\n");
-      t = sizeof(remote); 
-      s2 = accept(s, (struct sockaddr *)&remote, &t);
-      if(s2 == EXIT_ERR){
-         printf("accept failed, existing\n");
-         //cleanup
-         i = clean_all(p->mapping, p);
-         if(i == EXIT_ERR){
-            printf("cleanup return with error\n");
-            exit(EXIT_ERR);
-         }
-         exit(EXIT_ERR);
-      }
+     int done, n;
+     printf("waiting for connection\n");
+     t = sizeof(remote); 
+     s2 = accept(s, (struct sockaddr *)&remote, &t);
+     if(s2 == EXIT_ERR){
+        printf("accept failed, existing\n");
+        //cleanup
+        i = clean_all(p->mapping, p);
+        if(i == EXIT_ERR){
+           printf("cleanup return with error\n");
+           exit(EXIT_ERR);
+        }
+        exit(EXIT_ERR);
+     }
       
-      printf("received scannig request\n");
+     printf("received scannig request\n");
 
-      done = 0;
-      do{
-         n = recv(s2, msg, MAX_MSG, 0);
-         // we got a connection without any data 
-         if(n <= 0){
-            // recv failed  
-            if(n < 0){
-               perror("recv");
-               // exit the loop
-               done = 1;
-               close(s2);
-             }
-          }
-      } while (!done);
+     n = recv(s2, msg, MAX_MSG, 0);
+     printf("length of data:%d\n", n);
+     // we got a connection without any data 
+     if(n < 0){
+        perror("recv");
+     }
+     
+     // calling scanner
+
+    // send results
+    s3 = write(s2, DEFAULT_MSG_TEST, strlen(DEFAULT_MSG_TEST));
+    if(s3 == EXIT_ERR){
+        perror("sending data failed");
+    }
+    //}
     
-      close(s2);
+    close(s2);
   }
      
   // cleanup
