@@ -45,9 +45,10 @@ struct dgalist *check_existing(char *name) {
 }
 
 // caching 
-// caching 
 int add_domain(char *name, int v) {
     struct dgalist *s;
+
+    printf("adding:%s with verdict:%d\n", name, v);
 
     s = malloc(sizeof(struct dgalist));
     if (s == NULL){
@@ -128,9 +129,11 @@ int D(struct mapper *mp, char *msg){
     l = levenshtein(msg,  mp->bufferdb);
     // this needs to be tested 
     if(l <= BENIGN){
+      add_domain(msg, 0);
       return 0;
     }
    }
+   add_domain(msg, 1);
    // number of transformations 
    return l;
 }
@@ -141,8 +144,6 @@ void msghandler (int sock, struct mapper *mp) {
    char buffer[MAX_MSG], response[MAX_MSG];
    struct dgalist *s;
 
-   print_domain();
-   
    bzero(buffer, MAX_MSG);
    n = read(sock, buffer, MAX_MSG);
    
@@ -156,20 +157,14 @@ void msghandler (int sock, struct mapper *mp) {
    // check if in cache
    s = check_existing(buffer);
    if(s == NULL){// not in cache
-     printf("new request, no registered cache\n");
+     printf("new request, not registered in cache\n");
 
      l = D(mp, buffer);
      // send analysis result//
      if(l <= BENIGN){
-       // caching benign
-       add_domain(buffer, 0);
-
        snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
        n = write(sock, response, strlen(response));
      }else{
-       // caching dga
-       add_domain(buffer, 1);
-
        snprintf(response, MAX_MSG, "potential dga detect, number of transformation:%d", l);
        n = write(sock, response, strlen(response));
     }
