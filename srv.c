@@ -80,11 +80,6 @@ struct mapper *loader(){
      exit(EXIT_FAILURE);
    }
 
-   if(stat(WORDS, &st) != 0){
-     perror("stat failed obtaining dictionary size\n");
-     exit(EXIT_FAILURE);
-   }
-
    // allocating struct //
    mp = malloc(sizeof(struct mapper));
    if(mp == NULL){
