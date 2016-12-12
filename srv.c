@@ -9,15 +9,64 @@
 #include "global.h"
 #include "uthash.h"
 
+struct dgalist {
+    char dname[20];
+    int verdict;             
+    UT_hash_handle hh; /* makes this structure hashable */
+};
+// declaring uthash
+struct dgalist *dlist = NULL;
+
+// clean 
+void clean_all() {
+  struct dgalist *s, *tmp;
+
+  HASH_ITER(hh, dlist, s, tmp) {
+    HASH_DEL(dlist,s);  /* delete; domains advances to next */
+    free(s);            /* free should be when we abort, stopped  */
+  }
+}
+
+// wont call it, only for debug, testing the cache
+void print_domain() {
+    struct dgalist *s;
+
+    for(s=dlist; s != NULL; s=s->hh.next) {
+        printf("domain id %s: dga %d\n", s->dname, s->verdict);
+    }
+}
+
+// search for dga
+struct dgalist *check_existing(char *name) {
+    struct dgalist *s;
+
+    HASH_FIND_STR(dlist, name, s );  /* s: output pointer */
+    return s;
+}
+
+// caching 
+// caching 
+int add_domain(char *name, int v) {
+    struct dgalist *s;
+
+    s = malloc(sizeof(struct dgalist));
+    if (s == NULL){
+      perror("allocating memory failed, cannot add domain");
+      return -1;
+    }
+    s->verdict = v;
+    strcpy(s->dname, name);
+    HASH_ADD_STR(dlist, dname, s);  /* id: name of key field */
+
+    return 0;
+}
+
+// dictionary mapper
 struct mapper{
    char *bufferdb;
    int size;
    FILE *fp;
 };
-
-/*
-  allocating buffer for data files
-*/
 
 struct mapper *loader(){
    struct mapper *mp;
@@ -61,7 +110,7 @@ struct mapper *loader(){
     exit(EXIT_FAILURE);
    }
 
- 
+   // allocated struct
    return mp;
 }
 
@@ -70,8 +119,6 @@ int D(struct mapper *mp, char *msg){
    int l;
    // rewind to the beginning of the file 
    fseek(mp->fp, 0, SEEK_SET);
-   // remove trailing line received from socket
-   msg[strlen(msg) -1] = 0;
 
    // reading dictionary 
    while(fgets(mp->bufferdb, mp->size, mp->fp)){
@@ -92,6 +139,10 @@ int D(struct mapper *mp, char *msg){
 void msghandler (int sock, struct mapper *mp) {
    int n, l;
    char buffer[MAX_MSG], response[MAX_MSG];
+   struct dgalist *s;
+
+   print_domain();
+   
    bzero(buffer, MAX_MSG);
    n = read(sock, buffer, MAX_MSG);
    
@@ -99,23 +150,39 @@ void msghandler (int sock, struct mapper *mp) {
       perror("ERROR reading from socket");
       exit(1);
    }
-   
-   l = D(mp, buffer);
-   // send analysis result//
-   if(l <= BENIGN){
-     snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
-     n = write(sock, response, strlen(response));
+  
+   // remove trailing line received from socket
+   buffer[strlen(buffer) -1] = 0;
+   // check if in cache
+   s = check_existing(buffer);
+   if(s == NULL){// not in cache
+     printf("new request, no registered cache\n");
+
+     l = D(mp, buffer);
+     // send analysis result//
+     if(l <= BENIGN){
+       // caching benign
+       add_domain(buffer, 0);
+
+       snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
+       n = write(sock, response, strlen(response));
+     }else{
+       // caching dga
+       add_domain(buffer, 1);
+
+       snprintf(response, MAX_MSG, "potential dga detect, number of transformation:%d", l);
+       n = write(sock, response, strlen(response));
+    }
    }else{
-     snprintf(response, MAX_MSG, "potential dga detect, number of transformation:%d", l);
-     n = write(sock, response, strlen(response));
+       // results cached 
+       snprintf(response, MAX_MSG, "cached:%s verdict:%d", s->dname, s->verdict);
+       n = write(sock, response, strlen(response));
    }
-   //n = write(sock,"I got your message",18);
    
    if (n < 0) {
       perror("ERROR writing to socket");
       exit(1);
    }
-    
 }
 
 int main( int argc, char *argv[] ) {
