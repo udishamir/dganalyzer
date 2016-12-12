@@ -118,6 +118,7 @@ struct mapper *loader(){
 // computing edit distance algorithm //
 int D(struct mapper *mp, char *msg){
    int l;
+
    // rewind to the beginning of the file 
    fseek(mp->fp, 0, SEEK_SET);
 
@@ -129,10 +130,12 @@ int D(struct mapper *mp, char *msg){
     l = levenshtein(msg,  mp->bufferdb);
     // this needs to be tested 
     if(l <= BENIGN){
+      // adding benign domain
       add_domain(msg, 0);
       return 0;
     }
    }
+   // adding non benign
    add_domain(msg, 1);
    // number of transformations 
    return l;
@@ -190,7 +193,7 @@ int main( int argc, char *argv[] ) {
    int n, pid;
 
    printf("starting server\n");
-   // allocating memory and mapping file once //
+   // allocating memory and open file //
    mp = loader();
 
    /* First call to socket() function */
@@ -209,16 +212,11 @@ int main( int argc, char *argv[] ) {
    serv_addr.sin_addr.s_addr = INADDR_ANY;
    serv_addr.sin_port = htons(portno);
    
-   /* Now bind the host address using bind() call.*/
+   /* bind */
    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR on binding");
       exit(EXIT_FAILURE);
    }
-   
-   /* Now start listening for the clients, here
-      * process will go in sleep mode and will wait
-      * for the incoming connection
-   */
    
    listen(sockfd,5);
    clilen = sizeof(cli_addr);
@@ -231,7 +229,7 @@ int main( int argc, char *argv[] ) {
          exit(EXIT_FAILURE);
       }
       
-      /* Create child process */
+      /* fork */
       pid = fork();
         
       if (pid < 0) {
@@ -240,9 +238,9 @@ int main( int argc, char *argv[] ) {
       }
       
       if (pid == 0) {
-         /* This is the client process */
+         /* client process */
          close(sockfd);
-         // handling the message 
+         // scanner message 
          msghandler(newsockfd, mp);
          exit(EXIT_SUCCESS);
       }
@@ -250,5 +248,5 @@ int main( int argc, char *argv[] ) {
          close(newsockfd);
       }
         
-   } /* end of while */
+   }
 }
