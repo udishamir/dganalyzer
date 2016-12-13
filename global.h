@@ -9,5 +9,6 @@
 #define DEFAULT_MSG_TEST "echo reply"
 #define MAX_LEN 18
 #define BENIGN 3
+#define BDB "db/main.db"
 
 int levenshtein(char *s1, char *s2);

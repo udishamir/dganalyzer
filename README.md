@@ -9,6 +9,8 @@ We know them when we see them but in order to detect them programmaticaly im usi
 
 dont ask me why i've called it bogon :)
 
+## CACHE
+I moved to BerkleyDB in order to have persistence. BerkleyDB is very fast and have solid API's 
 
 The MIT License (MIT)
 Copyright (c) <2016> <copyright holders>
