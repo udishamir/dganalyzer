@@ -10,7 +10,8 @@ We know them when we see them but in order to detect them programmaticaly im usi
 dont ask me why i've called it bogon :)
 
 ## CACHE
-I moved to BerkleyDB in order to have persistence. BerkleyDB is very fast and have solid API's 
+I moved to BerkleyDB in order to have persistence. BerkleyDB is very fast and have solid [API's](https://docs.oracle.com/cd/E17076_02/html/gsg/C/BerkeleyDB-Core-C-GSG.pdf)
+obtaining BerkleyDB from:[Here](http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/downloads/index.html).
 
 The MIT License (MIT)
 Copyright (c) <2016> <copyright holders>
