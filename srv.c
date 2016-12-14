@@ -106,11 +106,10 @@ void msghandler (int sock, struct mapper *mp) {
   l = D(mp, buffer);
 
   /* caching results */
-  /*
-  res = addentry(buffer, (char *)l);
+  res = addentry(buffer, l);
   if(res == EXIT_ERR){
     printf("failed to cache:%s database function failed\n", buffer);
-  }*/
+  }
 
   // send analysis result//
   if(l <= BENIGN){

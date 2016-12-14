@@ -15,4 +15,4 @@
 /* functions prototype */
 int levenshtein(char *s1, char *s2);
 int ventry(char *domain);
-int addentry(char *domain, char *v);
+int addentry(char *domain, int v);

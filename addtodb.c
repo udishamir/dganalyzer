@@ -12,11 +12,11 @@
 
 #include "global.h"
 
-int addentry(char *domain, char *v){
+int addentry(char *domain, int v){
   DB *dbp; /* DB structure handle */
   DBT key, data;
 
-  char *keyname = domain, *verdict = (char *)v;
+  char *keyname = domain;
   
   // initialize key, data
   memset(&data, 0, sizeof(DBT));
@@ -51,8 +51,8 @@ int addentry(char *domain, char *v){
   key.data = keyname;
   key.size = strlen(keyname) + 1;
 
-  data.data = verdict;
-  data.size = strlen(verdict) + 1;
+  data.data = &v;
+  data.size = sizeof(v);
 
   printf("adding data information to database ...\n");
   if((ret = dbp->put(dbp, NULL, &key, &data, 0)) == 0){
@@ -66,6 +66,7 @@ int addentry(char *domain, char *v){
 
     return EXIT_SUCCESS;
   }else{
+      printf("error adding to db");
       dbp->err(dbp, ret, "DB->put");
   }
   
