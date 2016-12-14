@@ -7,60 +7,6 @@
 #include <sys/stat.h>
 
 #include "global.h"
-#include "uthash.h"
-
-struct dgalist {
-    char dname[20];
-    int verdict;             
-    UT_hash_handle hh; /* makes this structure hashable */
-};
-// declaring uthash
-struct dgalist *dlist = NULL;
-
-// clean 
-void clean_all() {
-  struct dgalist *s, *tmp;
-
-  HASH_ITER(hh, dlist, s, tmp) {
-    HASH_DEL(dlist,s);  /* delete; domains advances to next */
-    free(s);            /* free should be when we abort, stopped  */
-  }
-}
-
-// wont call it, only for debug, testing the cache
-void print_domain() {
-    struct dgalist *s;
-
-    for(s=dlist; s != NULL; s=s->hh.next) {
-        printf("domain id %s: dga %d\n", s->dname, s->verdict);
-    }
-}
-
-// search for dga
-struct dgalist *check_existing(char *name) {
-    struct dgalist *s;
-
-    HASH_FIND_STR(dlist, name, s );  /* s: output pointer */
-    return s;
-}
-
-// caching 
-int add_domain(char *name, int v) {
-    struct dgalist *s;
-
-    printf("adding:%s with verdict:%d\n", name, v);
-
-    s = malloc(sizeof(struct dgalist));
-    if (s == NULL){
-      perror("allocating memory failed, cannot add domain");
-      return -1;
-    }
-    s->verdict = v;
-    strcpy(s->dname, name);
-    HASH_ADD_STR(dlist, dname, s);  /* id: name of key field */
-
-    return 0;
-}
 
 // dictionary mapper
 struct mapper{
@@ -125,57 +71,44 @@ int D(struct mapper *mp, char *msg){
     l = levenshtein(msg,  mp->bufferdb);
     // this needs to be tested 
     if(l <= BENIGN){
-      // adding benign domain
-      add_domain(msg, 0);
       return 0;
     }
    }
-   // adding non benign
-   add_domain(msg, 1);
    // number of transformations 
    return l;
 }
 
 // socket handler //
 void msghandler (int sock, struct mapper *mp) {
-   int n, l;
-   char buffer[MAX_MSG], response[MAX_MSG];
-   struct dgalist *s;
+  int n, l;
+  char buffer[MAX_MSG], response[MAX_MSG];
 
-   bzero(buffer, MAX_MSG);
-   n = read(sock, buffer, MAX_MSG);
+  bzero(buffer, MAX_MSG);
+  n = read(sock, buffer, MAX_MSG);
    
-   if (n < 0) {
-      perror("ERROR reading from socket");
-      exit(1);
-   }
+  if (n < 0) {
+     perror("ERROR reading from socket");
+     exit(1);
+  }
   
    // remove trailing line received from socket
-   buffer[strlen(buffer) -1] = 0;
+  buffer[strlen(buffer) -1] = 0;
    // check if in cache
-   s = check_existing(buffer);
-   if(s == NULL){// not in cache
-     printf("new request, not registered in cache\n");
 
-     l = D(mp, buffer);
-     // send analysis result//
-     if(l <= BENIGN){
-       snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
-       n = write(sock, response, strlen(response));
-     }else{
-       snprintf(response, MAX_MSG, "potential dga detect, number of transformation:%d", l);
-       n = write(sock, response, strlen(response));
-    }
-   }else{
-       // results cached 
-       snprintf(response, MAX_MSG, "cached:%s verdict:%d", s->dname, s->verdict);
-       n = write(sock, response, strlen(response));
-   }
+  l = D(mp, buffer);
+   // send analysis result//
+  if(l <= BENIGN){
+     snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
+     n = write(sock, response, strlen(response));
+  }else{
+     snprintf(response, MAX_MSG, "potential dga detect, number of transformation:%d", l);
+     n = write(sock, response, strlen(response));
+  }
    
-   if (n < 0) {
-      perror("ERROR writing to socket");
-      exit(1);
-   }
+  if (n < 0) {
+     perror("ERROR writing to socket");
+     exit(1);
+  }
 }
 
 int main( int argc, char *argv[] ) {

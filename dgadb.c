@@ -1,7 +1,8 @@
 /*
-  dga database interface, this function will create the database if its not exist
-  cache and return values all ready cached
-.
+
+ BerkleyDB test app, call it with two args: one for the key and one for the value.
+ the app will search the database for key and will print its value. In case its missing it will add the pair.
+
 */
 
 #include <stdio.h>
@@ -16,6 +17,11 @@ int main(int argc, char *argv[]){
   DB *dbp; /* DB structure handle */
   DBT key, data;
 
+  if(argc != 3){
+    printf("dga BDB test app\nusage:%s key value\n", argv[0]);
+    exit(EXIT_SUCCESS);
+  }
+
   char *keyname = argv[1], *verdict = argv[2];
   
   // initialize key, data
@@ -25,13 +31,10 @@ int main(int argc, char *argv[]){
   u_int32_t flags; /* database open flags */
   int ret; /* function return value */
 
-  /* Initialize the structure. This
-  * database is not opened in an environment,
-  * so the environment pointer is NULL. */
+  /* so the environment pointer is NULL. */
   ret = db_create(&dbp, NULL, 0);
   if (ret != 0) {
-   /* Error handling goes here */
-   perror("db_create failed");
+   dbp->err(dbp, 0, "db_create");
    exit(EXIT_FAILURE);
   }
 
@@ -52,7 +55,7 @@ int main(int argc, char *argv[]){
   }
 
  /* this is for test only, pointing argv as the key, value
-    the key is an array
+    the key, values are arrays
  */
 
   key.data = keyname;
@@ -61,16 +64,17 @@ int main(int argc, char *argv[]){
   data.data = verdict;
   data.size = strlen(verdict) + 1;
 
-  // trying to retrieve the data
+  /* trying to retrieve the data */
   if((ret = dbp->get(dbp, NULL, &key, &data, 0)) == 0){
     printf("we have hit !!!, key:%s value:%s\n", (char *)key.data, (char *)data.data);
-    // data extracted, we can safely close the db
+    /* assuming edit distance return an int */
+    ret = atoi(data.data);
+    /* data extracted, we can safely close the db */
     if(dbp != NULL){
       dbp->close(dbp, 0);
     }
 
-  // return data value 
-  return atoi(argv[2]);
+    return ret;
 
   }else{
     // we have a miss !!!, adding values //
@@ -87,4 +91,6 @@ int main(int argc, char *argv[]){
   if (dbp != NULL){
    dbp->close(dbp, 0);
   }
+
+  return EXIT_SUCCESS;
 }                
