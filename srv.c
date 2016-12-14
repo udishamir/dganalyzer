@@ -58,7 +58,7 @@ struct mapper *loader(){
 
 // computing edit distance algorithm //
 int D(struct mapper *mp, char *msg){
-   int l;
+   int l, res;
 
    // rewind to the beginning of the file 
    fseek(mp->fp, 0, SEEK_SET);
@@ -80,7 +80,7 @@ int D(struct mapper *mp, char *msg){
 
 // socket handler //
 void msghandler (int sock, struct mapper *mp) {
-  int n, l;
+  int n = 0, l = 0, res = 0;
   char buffer[MAX_MSG], response[MAX_MSG];
 
   bzero(buffer, MAX_MSG);
@@ -93,10 +93,26 @@ void msghandler (int sock, struct mapper *mp) {
   
    // remove trailing line received from socket
   buffer[strlen(buffer) -1] = 0;
-   // check if in cache
 
+  /* query bdb and validate if domain in cache */
+  res = ventry(buffer);
+  if(res != EXIT_ERR){
+     snprintf(response, MAX_MSG, "domain:%s exist score:%d", buffer, res);
+     n = write(sock, response, strlen(response));
+     /* HIT !!!  we are done here */
+     return;
+  } 
+ 
   l = D(mp, buffer);
-   // send analysis result//
+
+  /* caching results */
+  /*
+  res = addentry(buffer, (char *)l);
+  if(res == EXIT_ERR){
+    printf("failed to cache:%s database function failed\n", buffer);
+  }*/
+
+  // send analysis result//
   if(l <= BENIGN){
      snprintf(response, MAX_MSG, "non dga algorithm, number of transformation:%d", l);
      n = write(sock, response, strlen(response));
@@ -107,7 +123,6 @@ void msghandler (int sock, struct mapper *mp) {
    
   if (n < 0) {
      perror("ERROR writing to socket");
-     exit(1);
   }
 }
 
@@ -134,7 +149,7 @@ int main( int argc, char *argv[] ) {
    
    /* Initialize socket structure */
    bzero((char *) &serv_addr, sizeof(serv_addr));
-   portno = 5001;
+   portno = LPORT;
    
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
