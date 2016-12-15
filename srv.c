@@ -19,8 +19,6 @@ struct mapper *loader(){
    struct mapper *mp;
    struct stat st;
 
-   FILE *fp;
-
    if(stat(WORDS, &st) != 0){
      perror("dictionary file was not found");
      exit(EXIT_FAILURE);
@@ -58,7 +56,7 @@ struct mapper *loader(){
 
 // computing edit distance algorithm //
 int D(struct mapper *mp, char *msg){
-   int l, res;
+   int l;
 
    // rewind to the beginning of the file 
    fseek(mp->fp, 0, SEEK_SET);
@@ -133,12 +131,11 @@ void msghandler (int sock, struct mapper *mp) {
 
 int main( int argc, char *argv[] ) {
    int sockfd, newsockfd, portno, clilen;
-   char buffer[256];
 
    struct sockaddr_in serv_addr, cli_addr;
    struct mapper *mp;
  
-   int n, pid;
+   int pid;
 
    printf("starting server\n");
    // allocating memory and open file //
