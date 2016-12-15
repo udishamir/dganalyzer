@@ -80,7 +80,7 @@ int D(struct mapper *mp, char *msg){
 
 // socket handler //
 void msghandler (int sock, struct mapper *mp) {
-  int n = 0, l = 0, res = 0;
+  int n = 0, l = 0, ret = 0;
   char buffer[MAX_MSG], response[MAX_MSG];
 
   bzero(buffer, MAX_MSG);
@@ -95,9 +95,9 @@ void msghandler (int sock, struct mapper *mp) {
   buffer[strlen(buffer) -1] = 0;
 
   /* query bdb and validate if domain in cache */
-  res = ventry(buffer);
-  if(res != EXIT_ERR){
-     snprintf(response, MAX_MSG, "domain:%s exist score:%d", buffer, res);
+  ret = ventry(buffer);
+  if(ret != EXIT_ERR){
+     snprintf(response, MAX_MSG, "domain:%s exist score:%d", buffer, ret);
      n = write(sock, response, strlen(response));
      /* HIT !!!  we are done here */
      return;
@@ -106,8 +106,8 @@ void msghandler (int sock, struct mapper *mp) {
   l = D(mp, buffer);
 
   /* caching results */
-  res = addentry(buffer, l);
-  if(res == EXIT_ERR){
+  ret = addentry(buffer, l);
+  if(ret == EXIT_ERR){
     printf("failed to cache:%s database function failed\n", buffer);
   }
 

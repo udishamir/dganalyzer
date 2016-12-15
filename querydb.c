@@ -51,9 +51,9 @@ int ventry(char *domain){
 
   /* trying to retrieve the data */
   if((ret = dbp->get(dbp, NULL, &key, &data, 0)) == 0){
-    printf("we have hit !!!, key:%s value:%d\n", (char *)key.data, (int)data.data);
+    printf("we have hit !!!, key:%s value:%d\n", (char *)key.data, *(int *)data.data);
     /* assuming edit distance return an int */
-    ret = atoi(data.data);
+    ret = *(int *)data.data;
     /* data extracted, we can safely close the db */
     if(dbp != NULL){
       dbp->close(dbp, 0);
