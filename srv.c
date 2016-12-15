@@ -97,9 +97,15 @@ void msghandler (int sock, struct mapper *mp) {
   /* query bdb and validate if domain in cache */
   ret = ventry(buffer);
   if(ret != EXIT_ERR){
-     snprintf(response, MAX_MSG, "domain:%s exist score:%d", buffer, ret);
-     n = write(sock, response, strlen(response));
      /* HIT !!!  we are done here */
+     if(ret > BENIGN){
+       snprintf(response, MAX_MSG, "domain:%s exist transformation:%d detected as dga", buffer, ret);
+       n = write(sock, response, strlen(response));
+     }else{
+       snprintf(response, MAX_MSG, "domain:%s exist transformation:%d non dga", buffer, ret);
+       n = write(sock, response, strlen(response));
+     }
+
      return;
   } 
  

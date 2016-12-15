@@ -21,7 +21,7 @@ int ventry(char *domain){
   memset(&key, 0, sizeof(DBT));
 
   u_int32_t flags; /* database open flags */
-  int ret; /* function return value */
+  int ret, size; /* function return value */
 
   /* so the environment pointer is NULL. */
   ret = db_create(&dbp, NULL, 0);
@@ -53,6 +53,18 @@ int ventry(char *domain){
   if((ret = dbp->get(dbp, NULL, &key, &data, 0)) == 0){
     printf("we have hit !!!, key:%s value:%d\n", (char *)key.data, *(int *)data.data);
     /* assuming edit distance return an int */
+    size = sizeof(*(int *)data.data);
+    if(size > 4){
+      printf("got weird size from dbd, truncating to -1\n");
+      ret = -1;
+
+      if(dbp != NULL){
+       dbp->close(dbp, 0);
+      }
+
+      return ret;
+    }
+ 
     ret = *(int *)data.data;
     /* data extracted, we can safely close the db */
     if(dbp != NULL){
