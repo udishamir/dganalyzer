@@ -78,7 +78,7 @@ int D(struct mapper *mp, char *msg){
 
 // socket handler //
 void msghandler (int sock, struct mapper *mp) {
-  int n = 0, l = 0, ret = 0;
+  int n = 0, l = 0, ret = 0, min = 0;
   char buffer[MAX_MSG], response[MAX_MSG];
 
   bzero(buffer, MAX_MSG);
@@ -91,7 +91,14 @@ void msghandler (int sock, struct mapper *mp) {
   
    // remove trailing line received from socket
   buffer[strlen(buffer) -1] = 0;
-
+  
+  /* if domain length smaller or equal min length return */
+  min = strlen(buffer);
+  if(min <= IGNORE_LEN){
+     printf("domain is to short: wont compute\n");
+     return;
+  }
+ 
   /* query bdb and validate if domain in cache */
   ret = ventry(buffer);
   if(ret != EXIT_ERR){
